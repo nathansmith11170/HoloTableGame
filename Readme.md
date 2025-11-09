@@ -1,7 +1,8 @@
 # HoloTable
 
 The concept of this game is to have a real time strategy simulation of using a holographic table to command space-faring vessels.
-You don't control units directly, but the scripts for unit behaviors can be edited live!
+
+You don't control units directly, but the scripts controlling your units can be edited live!
 
 Current status: drawing board, conceptual stage
 
@@ -28,11 +29,11 @@ These dependencies should be sourced and placed under third_party
 
 ## Project Structure
 
-lua_scripts - "agent" logic is written in a scripting language
-shaders - shaders live here
-assets - audio-visual asset files live here
-game_lib - the game code itself will be compiled as a DLL
-graphical_client - here is where windowing, GUI, and rendering of the game is handled
-headless - here is where hosting a server from CLI is handled
-tests - here is where tests live
-third_party - here is where we put build dependencies from others, primarily windowing library, graphics API libraries, and math libraries
+- lua_scripts: "agent" logic is written in a scripting language
+- shaders: shaders live here
+- assets: audio-visual asset files live here
+- game_lib: the game code itself will be compiled as a DLL
+- graphical_client: here is where windowing, GUI, and rendering of the game is handled
+- headless: here is where hosting a server from CLI is handled
+- tests: here is where tests live
+- third_party: here is where we put build dependencies from others, primarily windowing library, graphics API libraries, and math libraries
