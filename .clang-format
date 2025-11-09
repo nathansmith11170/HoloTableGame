@@ -1,0 +1,10 @@
+Language: Cpp
+BreakBeforeBraces: Allman
+PointerAlignment: Left
+IntegerLiteralSeparator:
+  Binary: 4
+  Decimal: 3
+  Hex: 4
+UseTab: Always
+TabWidth: 2
+IndentWidth: 2
