@@ -7,7 +7,6 @@ SET(CMAKE_CXX_SCAN_FOR_MODULES ON)
 SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 PROJECT(HoloTable CXX)
 
-# Match compiler flags from the ninja file
 ADD_COMPILE_OPTIONS(
 								-stdlib=libc++
 								-Weverything
@@ -20,14 +19,21 @@ ADD_COMPILE_OPTIONS(
 								-Wno-c++98-compat-pedantic
 								-Wno-pre-c++20-compat
 								-O0
-								-glldb
+								-g
 )
 
 INCLUDE_DIRECTORIES(SYSTEM third_party)
 
 ADD_EXECUTABLE(holotable src/main.cxx)
 SET_TARGET_PROPERTIES(holotable PROPERTIES CXX_MODULE_STD ON)
-TARGET_LINK_LIBRARIES(holotable PUBLIC gdi32)
+IF (WIN32)
+	TARGET_LINK_LIBRARIES(holotable PUBLIC gdi32)
+ELSE()
+	find_package(X11 REQUIRED)
+	find_package(XRandR REQUIRED)
+
+	target_link_libraries(holotable ${X11_LIBRARIES} ${XRANDR_LIBRARIES})
+ENDIF()
 
 ADD_EXECUTABLE(tests tests/main.cxx)
 SET_TARGET_PROPERTIES(tests PROPERTIES CXX_MODULE_STD ON)

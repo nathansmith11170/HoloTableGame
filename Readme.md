@@ -21,6 +21,12 @@ What makes it unique:
 - live scripting and debugging (for those so inclined)
 - Server Multiplayer model, similar to Avorion or Minecraft
 
+## Compiler Support
+
+GCC or Clang versions that support module std
+
+MSVC doesn't build RGFW 1.7 for some reason, so it's excluded
+
 ## Build Dependencies
 Windows build only, for now
 These dependencies should be sourced and placed under third_party
