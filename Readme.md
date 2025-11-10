@@ -28,8 +28,12 @@ GCC or Clang versions that support module std
 MSVC doesn't build RGFW 1.7 for some reason, so it's excluded
 
 ## Build Dependencies
-Windows build only, for now
-These dependencies should be sourced and placed under third_party
+
+Windows build should be working.
+
+Wayland isn't working at the moment, but X11 should be.
+
+These dependencies should be sourced and placed under third_party before building
 
 - Version 1.7 of RGFW.h: https://github.com/ColleagueRiley/RGFW
 

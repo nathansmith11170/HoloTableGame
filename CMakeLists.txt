@@ -3,37 +3,45 @@ SET(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "d0edc3af-4c50-42ea-a356-e2862fe7a444")
 SET(CMAKE_CXX_STANDARD 23)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_CXX_EXTENSIONS OFF)
-SET(CMAKE_CXX_SCAN_FOR_MODULES ON)
 SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-PROJECT(HoloTable CXX)
+PROJECT(HoloTable CXX C)
 
+INCLUDE_DIRECTORIES(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
+
+ADD_LIBRARY(RGFW SHARED graphical_client/rgfw.c)
+SET_TARGET_PROPERTIES(RGFW PROPERTIES LINKER_LANGUAGE C)
+TARGET_COMPILE_DEFINITIONS(RGFW PRIVATE RGFW_EXPORT)
+IF (WIN32)
+    target_link_libraries(RGFW PUBLIC gdi32 user32)
+ELSE()
+    message(STATUS "Platform: Unix-like. Using X11.")
+		find_package(X11 REQUIRED)
+		find_package(PkgConfig REQUIRED)
+		pkg_check_modules(XRANDR REQUIRED xrandr)
+		target_link_libraries(RGFW PRIVATE ${XRANDR_LIBRARIES})
+		target_include_directories(RGFW PRIVATE ${XRANDR_INCLUDE_DIRS})
+		if(X11_FOUND)
+			message(STATUS "Configuring RGFW with X11 support.")
+			target_compile_definitions(RGFW PUBLIC RGFW_X11 RGFW_NO_WAYLAND)
+			target_link_libraries(RGFW PUBLIC ${X11_LIBRARIES})
+		else()
+			message(FATAL_ERROR "X11 not found.")
+		endif()
+ENDIF()
+
+SET(CMAKE_CXX_SCAN_FOR_MODULES ON)
 ADD_COMPILE_OPTIONS(
-								-stdlib=libc++
-								-Weverything
-								-Wno-weak-vtables
-								-Wno-covered-switch-default
-								-Wno-missing-prototypes
-								-Wno-unsafe-buffer-usage
-								-Wno-padded
-								-Wno-c++98-compat
-								-Wno-c++98-compat-pedantic
-								-Wno-pre-c++20-compat
+								-Wall
+								-Wextra
+								-Wpedantic
+								-pedantic
 								-O0
 								-g
 )
 
-INCLUDE_DIRECTORIES(SYSTEM third_party)
-
-ADD_EXECUTABLE(holotable src/main.cxx)
+ADD_EXECUTABLE(holotable graphical_client/main.cxx)
 SET_TARGET_PROPERTIES(holotable PROPERTIES CXX_MODULE_STD ON)
-IF (WIN32)
-	TARGET_LINK_LIBRARIES(holotable PUBLIC gdi32)
-ELSE()
-	find_package(X11 REQUIRED)
-	find_package(XRandR REQUIRED)
-
-	target_link_libraries(holotable ${X11_LIBRARIES} ${XRANDR_LIBRARIES})
-ENDIF()
+TARGET_LINK_LIBRARIES(holotable PRIVATE RGFW)
 
 ADD_EXECUTABLE(tests tests/main.cxx)
 SET_TARGET_PROPERTIES(tests PROPERTIES CXX_MODULE_STD ON)

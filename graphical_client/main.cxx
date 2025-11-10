@@ -1,5 +1,4 @@
-#define RGFW_IMPLEMENTATION
-#define RGFW_NO_API
+#define RGFW_IMPORT
 #include "RGFW.h"
 
 import std;
