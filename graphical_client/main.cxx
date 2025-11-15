@@ -23,7 +23,7 @@ int main()
 				break;
 		}
 
-		RGFW_window_swapBuffers(win);
+		RGFW_window_swapBuffers_software(win);
 	}
 
 	RGFW_window_close(win);

@@ -6,6 +6,16 @@ SET(CMAKE_CXX_EXTENSIONS OFF)
 SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 PROJECT(HoloTable CXX C)
 
+ADD_COMPILE_OPTIONS(
+								-Wall
+								-Wextra
+								-Wpedantic
+								-pedantic
+								-O0
+								-g
+)
+
+
 INCLUDE_DIRECTORIES(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
 
 #FIND_PACKAGE(Vulkan REQUIRED)
@@ -34,15 +44,6 @@ ELSE()
 ENDIF()
 
 SET(CMAKE_CXX_SCAN_FOR_MODULES ON)
-ADD_COMPILE_OPTIONS(
-								-Wall
-								-Wextra
-								-Wpedantic
-								-pedantic
-								-O0
-								-g
-)
-
 ADD_EXECUTABLE(holotable ${CMAKE_CURRENT_SOURCE_DIR}/graphical_client/main.cxx)
 SET_TARGET_PROPERTIES(holotable PROPERTIES CXX_MODULE_STD ON)
 TARGET_LINK_LIBRARIES(holotable PRIVATE RGFW)
