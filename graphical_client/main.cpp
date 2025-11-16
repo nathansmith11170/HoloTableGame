@@ -2,6 +2,7 @@
 #include "RGFW.h"
 
 import std;
+import game;
 
 static u8 icon[4 * 3 * 3] = {
 		0xFF, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0xFF,
@@ -23,7 +24,7 @@ int main()
 				break;
 		}
 
-		RGFW_window_swapBuffers_software(win);
+		RGFW_window_swapBuffers(win);
 	}
 
 	RGFW_window_close(win);

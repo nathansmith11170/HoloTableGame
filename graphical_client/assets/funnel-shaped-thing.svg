@@ -1,0 +1,12 @@
+<!-- arrow-notched-fill-with-outline.svg -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <style>
+      .fill { fill: currentColor; }
+      .stroke { fill: none; stroke: currentColor; stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; }
+    </style>
+  </defs>
+
+  <polygon class="fill" points="20,25 40,40 92,50 40,60 20,75"/>
+  <polygon class="stroke" points="20,25 40,40 92,50 40,60 20,75"/>
+</svg>

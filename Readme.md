@@ -47,3 +47,22 @@ These dependencies should be sourced and placed under third_party before buildin
 - headless: here is where hosting a server from CLI is handled
 - tests: here is where tests live
 - third_party: here is where we put build dependencies from others, primarily windowing library, graphics API libraries, and math libraries
+
+## Runtime Structure
+
+The final package will have this structure
+
+- install dir
+  - executable
+  - lib dir
+    - RGFW lib
+    - game lib
+    - other libs...
+  - assets dir
+    - configuration files
+    - graphics files
+    - sound files
+  - scripts dir
+    - lua files
+  - shaders dir
+    - shaders ...
