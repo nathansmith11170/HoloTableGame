@@ -21,17 +21,23 @@ What makes it unique:
 - live scripting and debugging (for those so inclined)
 - Server Multiplayer model, similar to Avorion or Minecraft
 
-## Compiler Support
+## Compiler and Tool Support
 
-GCC or Clang versions that support module std
+CMake 4.1.2 - unfortunately pinned because of experimental module std use
 
-MSVC doesn't build RGFW 1.7 for some reason, so it's excluded
+Clang versions that support module std (20 and 21)
+
+MSVC doesn't build RGFW 1.7 for some reason, so it's excluded for now
+
+GCC doesn't build 'std' module properly from CMake 4.1.2 for some reason, so it's excluded for now
 
 ## Build Dependencies
 
 Windows build should be working.
 
 Wayland isn't working at the moment, but X11 should be.
+
+No way to test for MacOS - if wanted pls contribute
 
 These dependencies should be sourced and placed under third_party before building
 
