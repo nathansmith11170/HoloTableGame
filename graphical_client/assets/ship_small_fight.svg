@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="100mm"
+   height="100mm"
+   viewBox="0 0 100 100"
+   version="1.1"
+   id="small_fight_ship"
+   class="adjustable-graphic"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <g
+     id="layer1">
+    <g
+       id="path2"
+       transform="matrix(0.01668302,-0.03301146,0.03637162,0.01838116,120.53048,34.780595)">
+      <path
+         d="M -844.99264,-691.95408 C -1085.1156,-581.81391 -2759.874,-1518.2576 -2759.874,-1518.2576 l 1305.157,-268.7249 1011.89536,-794.0661 c 0,0 -162.04802,1778.95435 -402.171,1889.09452 z"
+         id="path3" />
+    </g>
+  </g>
+</svg>

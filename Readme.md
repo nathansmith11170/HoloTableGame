@@ -39,20 +39,21 @@ Wayland isn't working at the moment, but X11 should be.
 
 No way to test for MacOS - if wanted pls contribute
 
-These dependencies should be sourced and placed under third_party before building
+These development dependencies should be manually obtained and placed under third_party before building
 
 - Version 1.7 of RGFW.h: https://github.com/ColleagueRiley/RGFW
+- Version 1.12.1 of msdfgen executable: https://github.com/Chlumsky/msdfgen
 
 ## Project Structure
 
 - lua_scripts: "agent" logic is written in a scripting language
 - shaders: shaders live here
-- assets: audio-visual asset files live here
+- assets: audio-visual asset files live here, in development graphics are SVGs, build outputs PNGs (multi-channel signed distance fields)
 - game_lib: the game code itself will be compiled as a DLL
 - graphical_client: here is where windowing, GUI, and rendering of the game is handled
 - headless: here is where hosting a server from CLI is handled
 - tests: here is where tests live
-- third_party: here is where we put build dependencies from others, primarily windowing library, graphics API libraries, and math libraries
+- third_party: here is where we put build dependencies and tools from others, primarily windowing library, graphics API libraries, and math libraries
 
 ## Runtime Structure
 
