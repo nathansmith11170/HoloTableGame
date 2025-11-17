@@ -1,0 +1,34 @@
+We have a risk of scope creep - inspirations list some of the most ambitious games in the industry! initial small milestones:
+  manually control one ship with WASD and shoot some stationary asteroids to destroy them
+
+  control that ship via a lua script instead
+
+  test the program with many ships shooting asteroids at once
+
+  stand up the server and client architecture here and watch the simulation from two computers
+
+  continuing...
+
+
+Why start with software rendering at all?
+  I want to learn the rendering situation in a world I can actually access before moving on.
+  I also want to test limitations of software rendering here.
+  I think it will get me an initial prototype (the asteroids part) faster than trying to use a graphics API right away
+  I anticipate adopting the APIs somehow very early
+
+MSDF rendering stuff:
+  Initially, I made my first sprite as an SVG.
+  Loading this directly at runtime seems... not performant. And required a library or more than one library.
+  I could have saved as PNG at this stage, but that seems sub-optimal since I intend to allow for smooth zoom in and out. (mipmaps exist, but...)
+  AI pointed me at SDF, which is from a Valve paper apparently, and then at MSDF which allows for sharp corners. This also steps me into shader work early on, so it seems great.
+
+Performance focus:
+  A major driving force for this is that other games in this space experience FPS problems right as they get to the parts I enjoy most - usually due to the increasing scale of player activity.
+  How can we scale a simulation like this? Concepts I am thinking: thread pooling, sharding, thinking of the simulation like a microservices architecture
+    If we're sharding, how do we handle syncing for the world tick or render? In other words, at some point we need to take a meaningful snapshot of state to send to client or to render a frame.
+  Data-driven design - in my opinion deep simulation games begin to struggle with FPS death due to data access, fundamentally. Try to keep in mind what data is frequently accessed and make that fast
+
+Networking feature concerns:
+  If I, a player, change a lua script for my ships, how does that work in networked scenario? Upload to server host, somehow.
+  Script handling - different entities of the same type may be using different scripts, this will need visibility
+  How do we handle the tick-rate and synchronization of clients with server? (thinking of client-side prediction, server ticks result in reconciliation between client prediction and world state. Lag concern?)
