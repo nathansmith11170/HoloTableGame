@@ -6,26 +6,34 @@ SET(CMAKE_CXX_EXTENSIONS OFF)
 SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 PROJECT(HoloTable CXX C)
 
-# Default runtime output directory: put binaries into build/bin for consistency if not already set
-if(NOT DEFINED CMAKE_RUNTIME_OUTPUT_DIRECTORY)
-	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-endif()
-if(NOT DEFINED CMAKE_LIBRARY_OUTPUT_DIRECTORY)
-	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-endif()
-if(NOT DEFINED CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
-	set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-endif()
+if(MSVC)
+  add_compile_options(
+    /W4
+    /permissive-
+    /EHsc
+  )
 
-ADD_COMPILE_OPTIONS(
-								-Wall
-								-Wextra
-								-Wpedantic
-								-pedantic
-								-O0
-								-g
-)
+  add_compile_options(
+    "$<$<CONFIG:Debug>:/Od>"
+    "$<$<CONFIG:Debug>:/Zi>"
+    "$<$<CONFIG:Release>:/O2>"
+    "$<$<CONFIG:RelWithDebInfo>:/O2>" 
+  )
+else()
+  add_compile_options(
+    -Wall
+    -Wextra
+    -Wpedantic
+    -pedantic
+  )
 
+  add_compile_options(
+    "$<$<CONFIG:Debug>:-O0>"
+    "$<$<CONFIG:Debug>:-g>"
+    "$<$<CONFIG:Release>:-O2>"
+    "$<$<CONFIG:RelWithDebInfo>:-O2>"
+  )
+endif()
 
 INCLUDE_DIRECTORIES(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
 
@@ -55,9 +63,13 @@ ELSE()
 ENDIF()
 
 SET(CMAKE_CXX_SCAN_FOR_MODULES ON)
-ADD_LIBRARY(game_lib SHARED)
-SET_TARGET_PROPERTIES(game_lib PROPERTIES CXX_MODULE_STD ON)
-TARGET_SOURCES(game_lib
+ADD_LIBRARY(game SHARED)
+SET_TARGET_PROPERTIES(game
+	PROPERTIES
+		CXX_MODULE_STD ON
+		WINDOWS_EXPORT_ALL_SYMBOLS ON
+)
+TARGET_SOURCES(game
 	PUBLIC
 		FILE_SET game_mxx TYPE CXX_MODULES FILES
 			${CMAKE_CURRENT_SOURCE_DIR}/game_lib/game.cppm
@@ -65,8 +77,9 @@ TARGET_SOURCES(game_lib
 )
 
 ADD_EXECUTABLE(holotable ${CMAKE_CURRENT_SOURCE_DIR}/graphical_client/main.cpp)
+target_compile_definitions(holotable PRIVATE RGFW_IMPORT)
 SET_TARGET_PROPERTIES(holotable PROPERTIES CXX_MODULE_STD ON)
-TARGET_LINK_LIBRARIES(holotable PRIVATE RGFW game_lib)
+TARGET_LINK_LIBRARIES(holotable PRIVATE RGFW game)
 
 ADD_EXECUTABLE(tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/main.cpp)
 SET_TARGET_PROPERTIES(tests PROPERTIES CXX_MODULE_STD ON)
@@ -86,56 +99,90 @@ set(RT_ASSETS_SRC ${CMAKE_CURRENT_SOURCE_DIR}/graphical_client/assets)
 set(RT_SHADERS_SRC ${CMAKE_CURRENT_SOURCE_DIR}/graphical_client/shaders)
 set(RT_SCRIPTS_SRC ${CMAKE_CURRENT_SOURCE_DIR}/game_lib/scripts)
 
-function(_copy_dir_to_target target srcdir destdirname)
+# ---- SVG to PNG conversion using msdfgen (reworked to produce separate Ninja steps) ----
+set(RT_STAMPS_DIR ${CMAKE_BINARY_DIR}/stamps)
+file(MAKE_DIRECTORY ${RT_STAMPS_DIR})
+
+function(_create_copy_target target srcdir destdirname)
 	if(COPY_RUNTIME_RESOURCES AND EXISTS "${srcdir}")
-		add_custom_command(TARGET ${target} POST_BUILD
+		set(STAMP ${RT_STAMPS_DIR}/copy_${target}_${destdirname}.stamp)
+		add_custom_command(
+			OUTPUT ${STAMP}
 			COMMAND ${CMAKE_COMMAND} -E remove_directory "$<TARGET_FILE_DIR:${target}>/${destdirname}"
 			COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${target}>/${destdirname}"
 			COMMAND ${CMAKE_COMMAND} -E copy_directory "${srcdir}" "$<TARGET_FILE_DIR:${target}>/${destdirname}"
+			COMMAND ${CMAKE_COMMAND} -E make_directory "${RT_STAMPS_DIR}"
+			COMMAND ${CMAKE_COMMAND} -E touch ${STAMP}
 			COMMENT "Copying ${srcdir} -> $<TARGET_FILE_DIR:${target}>/${destdirname}"
+			VERBATIM
 		)
+		add_custom_target(copy_${target}_${destdirname} DEPENDS ${STAMP})
+		add_dependencies(${target} copy_${target}_${destdirname})
 	endif()
 endfunction()
 
-_copy_dir_to_target(holotable "${RT_ASSETS_SRC}" assets)
-_copy_dir_to_target(holotable "${RT_SHADERS_SRC}" shaders)
-_copy_dir_to_target(holotable "${RT_SCRIPTS_SRC}" scripts)
-
-# Optionally do same for tests so test binaries can access test assets if needed
-_copy_dir_to_target(tests "${RT_ASSETS_SRC}" assets)
-_copy_dir_to_target(tests "${RT_SHADERS_SRC}" shaders)
-_copy_dir_to_target(tests "${RT_SCRIPTS_SRC}" scripts)
-
-# Install targets and resource directories
-install(TARGETS RGFW
-				LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
-install(TARGETS game_lib
-				LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
-install(TARGETS holotable
-				RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-if(EXISTS "${RT_ASSETS_SRC}")
-	# Install the `assets` directory into the exec dir (EX: bin/assets)
-	install(DIRECTORY ${RT_ASSETS_SRC} DESTINATION ${CMAKE_INSTALL_BINDIR})
-	if(INSTALL_DATA_IN_DATADIR)
-		install(DIRECTORY ${RT_ASSETS_SRC} DESTINATION ${CMAKE_INSTALL_DATADIR}/holotable/assets)
+function(_create_convert_svgs_target target)
+	if(EXISTS "${RT_ASSETS_SRC}")
+		file(GLOB SVG_FILES "${RT_ASSETS_SRC}/*.svg")
+		set(STAMPS)
+		foreach(SVG_FILE ${SVG_FILES})
+			get_filename_component(SVG_BASENAME ${SVG_FILE} NAME_WE)
+			set(STAMP ${RT_STAMPS_DIR}/convert_${target}_${SVG_BASENAME}.stamp)
+			add_custom_command(
+				OUTPUT ${STAMP}
+				COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${target}>/assets"
+				COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/third_party/msdfgen.exe" msdf -svg "${SVG_FILE}" -autoframe -o "$<TARGET_FILE_DIR:${target}>/assets/${SVG_BASENAME}.png" -size 64 64 -pxrange 8
+				COMMAND ${CMAKE_COMMAND} -E touch ${STAMP}
+				COMMENT "Converting ${SVG_BASENAME}.svg -> ${SVG_BASENAME}.png for ${target}"
+				VERBATIM
+			)
+			list(APPEND STAMPS ${STAMP})
+		endforeach()
+		if(STAMPS)
+			add_custom_target(convert_svgs_${target} DEPENDS ${STAMPS})
+			# Ensure conversion happens after the copy step so output files aren't blocked
+			if(TARGET copy_${target}_assets)
+				add_dependencies(convert_svgs_${target} copy_${target}_assets)
+			endif()
+			add_dependencies(${target} convert_svgs_${target})
+		endif()
 	endif()
-endif()
+endfunction()
 
-if(EXISTS "${RT_SHADERS_SRC}")
-	# Install the `shaders` directory into the exec dir (EX: bin/shaders)
-	install(DIRECTORY ${RT_SHADERS_SRC} DESTINATION ${CMAKE_INSTALL_BINDIR})
-	if(INSTALL_DATA_IN_DATADIR)
-		install(DIRECTORY ${RT_SHADERS_SRC} DESTINATION ${CMAKE_INSTALL_DATADIR}/holotable/shaders)
+function(_create_remove_svgs_target target)
+	if(EXISTS "${RT_ASSETS_SRC}")
+		file(GLOB SVG_FILES "${RT_ASSETS_SRC}/*.svg")
+		set(STAMP ${RT_STAMPS_DIR}/remove_svgs_${target}.stamp)
+		# populate the command list by assembling remove commands for each SVG
+		set(_cmds)
+		foreach(SVG_FILE ${SVG_FILES})
+			get_filename_component(SVG_NAME ${SVG_FILE} NAME)
+			list(APPEND _cmds "COMMAND" "${CMAKE_COMMAND}" "-E" "remove" "$<TARGET_FILE_DIR:${target}>/assets/${SVG_NAME}")
+		endforeach()
+		list(APPEND _cmds "COMMAND" "${CMAKE_COMMAND}" "-E" "touch" "${STAMP}")
+		# Now create a custom command using the assembled command list
+		add_custom_command(
+			OUTPUT ${STAMP}
+			${_cmds}
+			COMMENT "Removing SVG files from output assets for ${target}"
+			VERBATIM
+		)
+		add_custom_target(remove_svgs_${target} DEPENDS ${STAMP})
+		# Ensure removal happens after copy and conversion
+		if(TARGET convert_svgs_${target})
+			add_dependencies(remove_svgs_${target} convert_svgs_${target})
+		endif()
+		if(TARGET copy_${target}_assets)
+			add_dependencies(remove_svgs_${target} copy_${target}_assets)
+		endif()
+		add_dependencies(${target} remove_svgs_${target})
 	endif()
-endif()
+endfunction()
 
-if(EXISTS "${RT_SCRIPTS_SRC}")
-	# Install the `scripts` directory into the exec dir (EX: bin/scripts)
-	install(DIRECTORY ${RT_SCRIPTS_SRC} DESTINATION ${CMAKE_INSTALL_BINDIR})
-	if(INSTALL_DATA_IN_DATADIR)
-		install(DIRECTORY ${RT_SCRIPTS_SRC} DESTINATION ${CMAKE_INSTALL_DATADIR}/holotable/scripts)
-	endif()
-endif()
-
-# End resource copy & install rules
+# Replace previous per-target copy/convert/remove calls with the new separate-step targets
+_create_copy_target(holotable "${RT_ASSETS_SRC}" assets)
+_create_copy_target(holotable "${RT_SHADERS_SRC}" shaders)
+_create_copy_target(holotable "${RT_SCRIPTS_SRC}" scripts)
+_create_convert_svgs_target(holotable)
+_create_remove_svgs_target(holotable)
+# End of reworked resource steps

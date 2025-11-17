@@ -23,13 +23,13 @@ What makes it unique:
 
 ## Compiler and Tool Support
 
-CMake 4.1.2 - unfortunately pinned because of experimental module std use
+CMake 4.1.2 - unfortunately pinned because of experimental module std use (Visual Studio users must use custom CMake executable as of 11/2025)
 
-Clang versions that support module std (20 and 21)
+Working build for Clang 21.1.5
 
-MSVC doesn't build RGFW 1.7 for some reason, so it's excluded for now
+Working build for MSVC 14.50
 
-GCC doesn't build 'std' module properly from CMake 4.1.2 for some reason, so it's excluded for now
+GCC doesn't build 'std' module properly using CMake 4.1.2 experimental feature for some reason, so it's excluded for now
 
 ## Build Dependencies
 
@@ -48,7 +48,7 @@ These development dependencies should be manually obtained and placed under thir
 
 - lua_scripts: "agent" logic is written in a scripting language
 - shaders: shaders live here
-- assets: audio-visual asset files live here, in development graphics are SVGs, build outputs PNGs (multi-channel signed distance fields)
+- assets: audio-visual asset files live here, in development graphics are SVGs
 - game_lib: the game code itself will be compiled as a DLL
 - graphical_client: here is where windowing, GUI, and rendering of the game is handled
 - headless: here is where hosting a server from CLI is handled
@@ -67,7 +67,7 @@ The final package will have this structure
     - other libs...
   - assets dir
     - configuration files
-    - graphics files
+    - graphics files: build outputs PNGs (multi-channel signed distance fields)
     - sound files
   - scripts dir
     - lua files

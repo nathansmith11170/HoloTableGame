@@ -6,3 +6,4 @@ compile_commands.json
 gcm.cache
 .cache
 __*
+vc140.pdb
