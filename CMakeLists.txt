@@ -1,16 +1,11 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 4.1.2 FATAL_ERROR)
-SET(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "d0edc3af-4c50-42ea-a356-e2862fe7a444")
-SET(CMAKE_CXX_STANDARD 23)
-SET(CMAKE_CXX_STANDARD_REQUIRED ON)
-SET(CMAKE_CXX_EXTENSIONS OFF)
-SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.28)
 PROJECT(HoloTable CXX C)
 
 if(MSVC)
+	string(APPEND CMAKE_CXX_FLAGS " /D_HAS_EXCEPTIONS=0 /EHs-c- /GR-")
   add_compile_options(
     /W4
     /permissive-
-    /EHsc
   )
 
   add_compile_options(
@@ -27,6 +22,8 @@ else()
     -pedantic
   )
 
+	string(APPEND CMAKE_CXX_FLAGS " -fno-exceptions -fno-rtti")
+
   add_compile_options(
     "$<$<CONFIG:Debug>:-O0>"
     "$<$<CONFIG:Debug>:-g>"
@@ -34,7 +31,10 @@ else()
     "$<$<CONFIG:RelWithDebInfo>:-O2>"
   )
 endif()
-
+SET(CMAKE_CXX_STANDARD 23)
+SET(CMAKE_CXX_EXTENSIONS OFF)
+SET(CMAKE_CXX_STANDARD_REQUIRED ON)
+SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 INCLUDE_DIRECTORIES(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
 
 #FIND_PACKAGE(Vulkan REQUIRED)
@@ -62,11 +62,23 @@ ELSE()
 	ENDIF()
 ENDIF()
 
+find_program(CLANG_TIDY_EXE NAMES "clang-tidy")
+
+if(CLANG_TIDY_EXE)
+    message(STATUS "Clang-Tidy found: ${CLANG_TIDY_EXE}")
+    
+    set(CLANG_TIDY_CHECKS "-*,bugprone-*,modernize-*,performance-*")
+    
+    set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE};-checks=${CLANG_TIDY_CHECKS}")
+else()
+    message(WARNING "Clang-Tidy not found! Code analysis will be disabled.")
+endif()
+
 SET(CMAKE_CXX_SCAN_FOR_MODULES ON)
+
 ADD_LIBRARY(game SHARED)
 SET_TARGET_PROPERTIES(game
 	PROPERTIES
-		CXX_MODULE_STD ON
 		WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
 TARGET_SOURCES(game
@@ -78,11 +90,9 @@ TARGET_SOURCES(game
 
 ADD_EXECUTABLE(holotable ${CMAKE_CURRENT_SOURCE_DIR}/graphical_client/main.cpp)
 target_compile_definitions(holotable PRIVATE RGFW_IMPORT)
-SET_TARGET_PROPERTIES(holotable PROPERTIES CXX_MODULE_STD ON)
 TARGET_LINK_LIBRARIES(holotable PRIVATE RGFW game)
 
 ADD_EXECUTABLE(tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/main.cpp)
-SET_TARGET_PROPERTIES(tests PROPERTIES CXX_MODULE_STD ON)
 
 # ---- Resource copy & install rules ----
 include(GNUInstallDirs)
@@ -186,3 +196,4 @@ _create_copy_target(holotable "${RT_SCRIPTS_SRC}" scripts)
 _create_convert_svgs_target(holotable)
 _create_remove_svgs_target(holotable)
 # End of reworked resource steps
+

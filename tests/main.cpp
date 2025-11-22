@@ -1,3 +1,3 @@
-import std;
+#include <print>
 
-int main() { std::println("Hello, Tester!"); }
+auto main() -> int { std::println("Hello, Tester!"); }

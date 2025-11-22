@@ -1,16 +1,23 @@
 #include "RGFW.h"
 
-import std;
+#include <array>
+#include <charconv>
+#include <filesystem>
+#include <fstream>
+#include <optional>
+#include <print>
+#include <vector>
+
 import game;
 
-static u8 icon[4 * 3 * 3] = {
+static std::array<unsigned char, static_cast<size_t>(4 * 3 * 3)> icon = {
 		0xFF, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0xFF,
 		0xFF, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0x00, 0xFF,
 		0xFF, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0xFF};
 
 namespace fs = std::filesystem;
 
-static bool exists_noexcept(const std::optional<fs::path>& p) noexcept
+static auto exists_noexcept(const std::optional<fs::path>& p) noexcept -> bool
 {
 	if (!p.has_value())
 		return false;
@@ -20,40 +27,41 @@ static bool exists_noexcept(const std::optional<fs::path>& p) noexcept
 	return exists;
 }
 
-static std::vector<fs::path>
-config_candidates(std::string_view filename = "options.toml")
+static auto config_candidates(std::string_view filename = "options.toml")
+		-> std::vector<fs::path>
 {
 	std::vector<fs::path> out;
 
 	if (const char* local = std::getenv("LOCALAPPDATA"); local && *local)
-		out.emplace_back(fs::u8path(local) / "HoloTable" / filename);
+		out.emplace_back(fs::path(local) / "HoloTable" / filename);
 	if (const char* userprofile = std::getenv("USERPROFILE");
-		userprofile && *userprofile)
-		out.emplace_back(fs::u8path(userprofile) / "AppData" / "Local" /
-									"HoloTable" / filename);
+			userprofile && *userprofile)
+		out.emplace_back(fs::path(userprofile) / "AppData" / "Local" / "HoloTable" /
+										 filename);
 	if (const char* xdg = std::getenv("XDG_DATA_HOME"); xdg && *xdg)
-		out.emplace_back(fs::u8path(xdg) / "HoloTable" / filename);
+		out.emplace_back(fs::path(xdg) / "HoloTable" / filename);
 	if (const char* home = std::getenv("HOME"); home && *home)
-		out.emplace_back(fs::u8path(home) / ".local" / "share" / "HoloTable" /
-						 filename);
+		out.emplace_back(fs::path(home) / ".local" / "share" / "HoloTable" /
+										 filename);
 
-	out.emplace_back(fs::path("assets/options.toml"));
+	out.emplace_back("assets/options.toml");
 
 	return out;
 }
 
-fs::path find_config(std::string_view filename = "options.toml") noexcept
+auto find_config(std::string_view filename = "options.toml") noexcept
+		-> fs::path
 {
 	for (auto& p : config_candidates(filename))
 	{
 		if (exists_noexcept(p))
 			return p;
 	}
-	return fs::path("");
+	return {""};
 }
 
 // Simple parser for our small options.toml
-static std::string trim_str(std::string s)
+static auto trim_str(std::string s) -> std::string
 {
 	while (!s.empty() && std::isspace((unsigned char)s.front()))
 		s.erase(s.begin());
@@ -62,7 +70,8 @@ static std::string trim_str(std::string s)
 	return s;
 }
 
-static std::pair<int, int> parse_display_size(const fs::path &p) noexcept
+static auto parse_display_size(const fs::path& p) noexcept
+		-> std::pair<int, int>
 {
 	int width = 800;
 	int height = 600;
@@ -92,42 +101,49 @@ static std::pair<int, int> parse_display_size(const fs::path &p) noexcept
 		}
 		if (!in_display)
 			continue;
-		// parse key = value
+
 		auto eq = line.find('=');
 		if (eq == std::string::npos)
 			continue;
-	
+
 		auto key = trim_str(line.substr(0, eq));
 		auto val = trim_str(line.substr(eq + 1));
-		// remove quotes if present
+
 		if (!val.empty() && (val.front() == '"' || val.front() == '\''))
 		{
 			if (val.size() >= 2)
 				val = val.substr(1, val.size() - 2);
 		}
-		try
+
+		if (key == "width" || key == "height")
 		{
-			if (key == "width")
-				width = std::stoi(val);
-			else if (key == "height")
-				height = std::stoi(val);
+			int parsed_value = 0;
+			auto result =
+					std::from_chars(val.data(), val.data() + val.size(), parsed_value);
+
+			if (result.ec == std::errc())
+			{
+				if (key == "width")
+					width = parsed_value;
+				else
+					height = parsed_value;
+			}
 		}
-		catch (...) { }
 	}
 	return {width, height};
 }
 
-int main()
+auto main() -> int
 {
 	auto cfg = find_config();
-	std::cout << "Using config: " << cfg.string() << '\n';
+	std::println("Using config: {}", cfg.string());
 
 	auto [width, height] = parse_display_size(cfg);
 
-	RGFW_window* win = RGFW_createWindow("name", RGFW_RECT(100, 100, width, height),
-								 static_cast<u64>(0));
+	RGFW_window* win = RGFW_createWindow(
+			"name", RGFW_RECT(100, 100, width, height), static_cast<u64>(0));
 
-	RGFW_window_setIcon(win, icon, RGFW_AREA(3, 3), 4);
+	RGFW_window_setIcon(win, icon.data(), RGFW_AREA(3, 3), 4);
 
 	while (RGFW_window_shouldClose(win) == RGFW_FALSE)
 	{
