@@ -184,7 +184,7 @@ auto circle_fragment_shader(::glsl_math::vec2 pixel_coord,
 
 	float alpha = 1.0f - ::glsl_math::smoothstep(-1.0f, 1.0f, sdf);
 
-	// For GLSL this would be setting a global
+	// For GLSL this would be setting gl_FragColor
 	return {circle_color, alpha};
 }
 } // namespace game::rendering
