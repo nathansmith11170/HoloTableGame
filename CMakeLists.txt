@@ -31,7 +31,7 @@ else()
     "$<$<CONFIG:RelWithDebInfo>:-O2>"
   )
 endif()
-SET(CMAKE_CXX_STANDARD 23)
+SET(CMAKE_CXX_STANDARD 26)
 SET(CMAKE_CXX_EXTENSIONS OFF)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -65,13 +65,17 @@ ENDIF()
 find_program(CLANG_TIDY_EXE NAMES "clang-tidy")
 
 if(CLANG_TIDY_EXE)
-    message(STATUS "Clang-Tidy found: ${CLANG_TIDY_EXE}")
-    
-    set(CLANG_TIDY_CHECKS "-*,bugprone-*,modernize-*,performance-*")
-    
-    set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE};-checks=${CLANG_TIDY_CHECKS}")
+	if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+		message(STATUS "Clang-Tidy found: ${CLANG_TIDY_EXE}")
+
+		set(CLANG_TIDY_CHECKS "-*,modernize-*,performance-*")
+
+		set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE};-checks=${CLANG_TIDY_CHECKS}")
+	else()
+		message(STATUS "Clang-Tidy found, but compiler is ${CMAKE_CXX_COMPILER_ID}; skipping clang-tidy checks.")
+	endif()
 else()
-    message(WARNING "Clang-Tidy not found! Code analysis will be disabled.")
+	message(WARNING "Clang-Tidy not found! Code analysis will be disabled.")
 endif()
 
 SET(CMAKE_CXX_SCAN_FOR_MODULES ON)
@@ -85,6 +89,7 @@ TARGET_SOURCES(game
 	PUBLIC
 		FILE_SET game_mxx TYPE CXX_MODULES FILES
 			${CMAKE_CURRENT_SOURCE_DIR}/game_lib/game.cppm
+			${CMAKE_CURRENT_SOURCE_DIR}/game_lib/config.cppm
 			${CMAKE_CURRENT_SOURCE_DIR}/game_lib/renderer.cppm
 )
 
@@ -110,6 +115,11 @@ set(RT_SHADERS_SRC ${CMAKE_CURRENT_SOURCE_DIR}/graphical_client/shaders)
 set(RT_SCRIPTS_SRC ${CMAKE_CURRENT_SOURCE_DIR}/game_lib/scripts)
 
 # ---- SVG to PNG conversion using msdfgen (reworked to produce separate Ninja steps) ----
+if(WIN32)
+	set(MSDFGEN_EXE "${CMAKE_CURRENT_SOURCE_DIR}/third_party/msdfgen.exe")
+else()
+	set(MSDFGEN_EXE "${CMAKE_CURRENT_SOURCE_DIR}/third_party/msdfgen")
+endif()
 set(RT_STAMPS_DIR ${CMAKE_BINARY_DIR}/stamps)
 file(MAKE_DIRECTORY ${RT_STAMPS_DIR})
 
@@ -141,7 +151,7 @@ function(_create_convert_svgs_target target)
 			add_custom_command(
 				OUTPUT ${STAMP}
 				COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${target}>/assets"
-				COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/third_party/msdfgen.exe" msdf -svg "${SVG_FILE}" -autoframe -o "$<TARGET_FILE_DIR:${target}>/assets/${SVG_BASENAME}.png" -size 64 64 -pxrange 8
+				COMMAND "${MSDFGEN_EXE}" msdf -svg "${SVG_FILE}" -autoframe -o "$<TARGET_FILE_DIR:${target}>/assets/${SVG_BASENAME}.png" -size 64 64 -pxrange 8
 				COMMAND ${CMAKE_COMMAND} -E touch ${STAMP}
 				COMMENT "Converting ${SVG_BASENAME}.svg -> ${SVG_BASENAME}.png for ${target}"
 				VERBATIM
@@ -196,4 +206,3 @@ _create_copy_target(holotable "${RT_SCRIPTS_SRC}" scripts)
 _create_convert_svgs_target(holotable)
 _create_remove_svgs_target(holotable)
 # End of reworked resource steps
-

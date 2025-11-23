@@ -1,5 +1,6 @@
 Language: Cpp
 BreakBeforeBraces: Allman
+ColumnLimit: 0
 PointerAlignment: Left
 IntegerLiteralSeparator:
   Binary: 4
