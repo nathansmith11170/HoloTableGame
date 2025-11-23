@@ -25,11 +25,11 @@ What makes it unique:
 
 CMake 4.1.2 - unfortunately pinned because of experimental module std use (Visual Studio users must use custom CMake executable as of 11/2025)
 
-Working build for Clang 21.1.5
+Working build for Clang 21.1.5 - only Clang gets clang-tidy static analysis, if clang-tidy executable exists
 
 Working build for MSVC 14.50
 
-GCC doesn't build 'std' module properly using CMake 4.1.2 experimental feature for some reason, so it's excluded for now
+Working builds for GCC 15
 
 ## Build Dependencies
 
