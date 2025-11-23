@@ -23,7 +23,7 @@ What makes it unique:
 
 ## Compiler and Tool Support
 
-CMake 4.1.2 - unfortunately pinned because of experimental module std use (Visual Studio users must use custom CMake executable as of 11/2025)
+CMake 3.28+ for C++20 modules
 
 Working build for Clang 21.1.5 - only Clang gets clang-tidy static analysis, if clang-tidy executable exists
 
