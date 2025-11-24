@@ -4,4 +4,4 @@
 // Potential use for adversarial machine learning or statistical analysis,
 // dependent on simulation performance
 
-int main() {}
+int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[argc + 1]) {}

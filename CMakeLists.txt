@@ -1,8 +1,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.28)
-PROJECT(HoloTable CXX C)
+PROJECT(HoloTable C)
 
 if(MSVC)
-	string(APPEND CMAKE_CXX_FLAGS " /D_HAS_EXCEPTIONS=0 /EHs-c- /GR-")
   add_compile_options(
     /W4
     /permissive-
@@ -22,19 +21,16 @@ else()
     -pedantic
   )
 
-	string(APPEND CMAKE_CXX_FLAGS " -fno-exceptions -fno-rtti")
-
   add_compile_options(
     "$<$<CONFIG:Debug>:-O0>"
-    "$<$<CONFIG:Debug>:-g>"
+    "$<$<CONFIG:Debug>:-glldb>"
     "$<$<CONFIG:Release>:-O2>"
     "$<$<CONFIG:RelWithDebInfo>:-O2>"
   )
 endif()
-SET(CMAKE_CXX_STANDARD 23)
-SET(CMAKE_CXX_EXTENSIONS OFF)
-SET(CMAKE_CXX_STANDARD_REQUIRED ON)
-SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+SET(CMAKE_C_STANDARD 23)
+SET(CMAKE_C_EXTENSIONS OFF)
+SET(CMAKE_C_STANDARD_REQUIRED OFF)
 INCLUDE_DIRECTORIES(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
 
 #FIND_PACKAGE(Vulkan REQUIRED)
@@ -62,42 +58,26 @@ ELSE()
 	ENDIF()
 ENDIF()
 
-find_program(CLANG_TIDY_EXE NAMES "clang-tidy")
-
-if(CLANG_TIDY_EXE)
-	if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-		message(STATUS "Clang-Tidy found: ${CLANG_TIDY_EXE}")
-
-		set(CLANG_TIDY_CHECKS "-*,modernize-*,performance-*")
-
-		set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE};-checks=${CLANG_TIDY_CHECKS}")
-	else()
-		message(STATUS "Clang-Tidy found, but compiler is ${CMAKE_CXX_COMPILER_ID}; skipping clang-tidy checks.")
-	endif()
-else()
-	message(WARNING "Clang-Tidy not found! Code analysis will be disabled.")
-endif()
-
-SET(CMAKE_CXX_SCAN_FOR_MODULES ON)
-
 ADD_LIBRARY(game SHARED)
 SET_TARGET_PROPERTIES(game
 	PROPERTIES
 		WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
+target_include_directories(game PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/game_lib/include)
 TARGET_SOURCES(game
-	PUBLIC
-		FILE_SET game_mxx TYPE CXX_MODULES FILES
-			${CMAKE_CURRENT_SOURCE_DIR}/game_lib/game.cppm
-			${CMAKE_CURRENT_SOURCE_DIR}/game_lib/config.cppm
-			${CMAKE_CURRENT_SOURCE_DIR}/game_lib/renderer.cppm
+	INTERFACE
+		${CMAKE_CURRENT_SOURCE_DIR}/game_lib/include/game.h
+	PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/game_lib/src/config.c
+		${CMAKE_CURRENT_SOURCE_DIR}/game_lib/src/renderer.c
 )
 
-ADD_EXECUTABLE(holotable ${CMAKE_CURRENT_SOURCE_DIR}/graphical_client/main.cpp)
+ADD_EXECUTABLE(holotable ${CMAKE_CURRENT_SOURCE_DIR}/graphical_client/main.c)
 target_compile_definitions(holotable PRIVATE RGFW_IMPORT)
 TARGET_LINK_LIBRARIES(holotable PRIVATE RGFW game)
+target_include_directories(holotable PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/game_lib/include)
 
-ADD_EXECUTABLE(tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/main.cpp)
+ADD_EXECUTABLE(tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/main.c)
 
 # ---- Resource copy & install rules ----
 include(GNUInstallDirs)
@@ -105,10 +85,7 @@ include(GNUInstallDirs)
 option(COPY_RUNTIME_RESOURCES "Copy runtime resource directories (assets/shaders/scripts) into the build output and install" ON)
 option(INSTALL_DATA_IN_DATADIR "Also install resources into ${CMAKE_INSTALL_DATADIR}/holotable in addition to the executable location" OFF)
 
-# Default runtime output directory for town: put binaries into build/bin for consistency if not already set
-if(NOT DEFINED CMAKE_RUNTIME_OUTPUT_DIRECTORY)
-	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-endif()
+
 
 set(RT_ASSETS_SRC ${CMAKE_CURRENT_SOURCE_DIR}/graphical_client/assets)
 set(RT_SHADERS_SRC ${CMAKE_CURRENT_SOURCE_DIR}/graphical_client/shaders)
